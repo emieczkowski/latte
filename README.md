@@ -107,7 +107,7 @@ Trials are interleaved across conditions to reduce time-of-day confounds. Result
 
 Open `notebooks/run_visualizer_overview.ipynb` in Jupyter. The notebook loads all three `results.csv` files and produces the figures from the paper: pass rates, token and wall-clock costs, coordination metrics, LATTE operator usage, task-graph evolution.
 
-Pre-computed experiment data (results CSVs and `events.jsonl` logs) is included in `experiments/`. 
+Pre-computed experiment data (results CSVs and aggregated metric JSONs) is included in `experiments/`.
 
 ## Adding a new task
 
