@@ -89,7 +89,7 @@ python scripts/experiment1_dispatch.py --k 10 --n 4 --provider anthropic
 # Debug Sprint (experiment 2)
 python scripts/experiment2_dispatch.py --k 10 --n 4 --provider anthropic
 
-# Text Processing
+# Text Processing (experiment 3)
 python scripts/experiment_textproc_dispatch.py --k 10 --n 4 --provider anthropic
 ```
 
