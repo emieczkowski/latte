@@ -1,20 +1,6 @@
 """
 Run the private evaluation suite (test_suite_eval.py) against every run in
 an experiment directory and write results to hidden_eval_results.csv.
-
-Usage:
-  # simple_eda (experiment1/n4) — new default
-  python scripts/eval_hidden_tests.py
-  python scripts/eval_hidden_tests.py --task simple_eda --experiment-dir experiments/experiment1/n4
-
-  # synthetic_eda (experiment1/n5) — original task
-  python scripts/eval_hidden_tests.py --task synthetic_eda --experiment-dir experiments/experiment1/n5
-
-  # textproc (text processing library extension)
-  python scripts/eval_hidden_tests.py --task textproc --experiment-dir experiments/textproc/n4
-
-  # collab_report (collaborative research report — LLM-as-judge eval)
-  python scripts/eval_hidden_tests.py --task collab_report --experiment-dir experiments/collab_report/n4
 """
 import argparse
 import csv
@@ -39,21 +25,6 @@ TASK_CONFIGS = {
         ],
         "default_exp_dir": "experiments/experiment1/n4",
     },
-    "synthetic_eda": {
-        "task_dir":       PROJECT_ROOT / "tasks" / "synthetic_eda",
-        "skip_if_missing": ["findings.json"],
-        "test_classes": [
-            "TestOutputContract",
-            "TestTrimodalDistribution",
-            "TestConditionalRelationship",
-            "TestCorrelationReversal",
-            "TestTwoDriverMNAR",
-            "TestFullMediation",
-            "TestFigures",
-            "TestNarrative",
-        ],
-        "default_exp_dir": "experiments/experiment1/n5",
-    },
     "textproc": {
         "task_dir":       PROJECT_ROOT / "tasks" / "textproc",
         "skip_if_missing": ["sentiment.py", "keywords.py", "pipeline.py"],
@@ -68,19 +39,6 @@ TASK_CONFIGS = {
             "TestPipelineIntegration",
         ],
         "default_exp_dir": "experiments/textproc/n4",
-    },
-    "collab_report": {
-        "task_dir":       PROJECT_ROOT / "tasks" / "collab_report",
-        "skip_if_missing": ["report.md", "section_notes.json"],
-        "test_classes": [
-            "TestStructuralQuality",
-            "TestLLMCoherence",
-            "TestLLMConsistency",
-            "TestLLMIntegration",
-            "TestLLMDepth",
-            "TestLLMCompleteness",
-        ],
-        "default_exp_dir": "experiments/collab_report/n4",
     },
 }
 

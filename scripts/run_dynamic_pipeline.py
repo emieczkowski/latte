@@ -73,24 +73,17 @@ async def run_pipeline(task_file, n_teammates, max_rounds, run_dir, model_config
     (run_dir / ".locks").mkdir(exist_ok=True)
     repo_dir = run_dir / "repo"
     repo_dir.mkdir(parents=True, exist_ok=True)
-
-    # Copy the task description into the run directory
     task_copy = run_dir / "tasks.json"
     shutil.copy(task_file, task_copy)
 
-    # Copy test_suite.py into the repo (conftest.py is intentionally excluded —
-    # it contains ground-truth planted properties that would reveal the task to agents).
     for fname in ("test_suite.py",):
         src = task_dir / fname
         if src.exists():
             shutil.copy(src, repo_dir / fname)
 
-    # If the task ships a setup script, run it now so data files exist before
-    # agents start working (not deferred until the first <run_tests /> call).
     setup_script = task_dir / "setup_data.py"
     if setup_script.exists():
         import importlib.util, sys as _sys
-        # Add the task directory so that `from conftest import ...` works inside setup scripts.
         _inserted = str(task_dir) not in _sys.path
         if _inserted:
             _sys.path.insert(0, str(task_dir))
@@ -120,16 +113,13 @@ async def run_pipeline(task_file, n_teammates, max_rounds, run_dir, model_config
     )
     orchestrator.verify_exposure_threshold = verify_threshold
 
-    # ── Planning phase: lead builds the task graph from the NL description ──
     if verbose:
         print("  [planning] Lead decomposing project into task graph...")
     n_tasks = await orchestrator.planning_phase(
         lead_agent_name="Lead",
         planning_prompt=planning_prompt,
     )
-    # Reset lead history after planning: the planning conversation is large and stale
-    # once execution begins. The orchestrator holds the authoritative task graph, so
-    # the lead doesn't need to remember the decomposition back-and-forth.
+
     agents["Lead"].history = []
 
     if verbose:
@@ -139,7 +129,6 @@ async def run_pipeline(task_file, n_teammates, max_rounds, run_dir, model_config
             print(f"    task {t['id']}: {t['title']}{deps}")
         print(f"  [planning] {n_tasks} tasks discovered.\n")
 
-    # ── Main loop ────────────────────────────────────────────────────────────
     orchestrator.initialize_agents(lead_agent_name="Lead")
     t0 = time.time()
     success = await orchestrator.run_async(max_rounds=max_rounds, lead_agent_name="Lead")
@@ -193,7 +182,7 @@ def main():
     effective_model    = (args.model or os.getenv("LLM_MODEL")
                           or _PROVIDER_DEFAULT_MODELS.get(effective_provider, effective_provider))
 
-    task_name = Path(args.tasks).parent.name  # e.g. "cdc_mortality"
+    task_name = Path(args.tasks).parent.name 
     ts        = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir   = Path("runs") / f"{effective_provider}_{effective_model}" / f"{task_name}_n{args.n}_{ts}"
 

@@ -1,12 +1,3 @@
-"""
-run_no_graph_pipeline.py — Baseline condition: no task-graph infrastructure.
-
-1 leader + N teammates collaborate freely on a debugging task.
-No planning phase, no discover_task, no claim_task / complete_task.
-Agents coordinate only via broadcasts and direct file edits.
-
-Success is measured by whether the test suite passes at the end.
-"""
 from __future__ import annotations
 
 import asyncio
@@ -33,7 +24,6 @@ from orchestrator.token_parser import (
 
 
 class _NoGraphAgent(BaseAgent):
-    """Simple agent that uses a flat system prompt with no task-graph vocabulary."""
 
     def __init__(self, name: str, system_prompt: str, model: dict | None = None):
         super().__init__(name, system_prompt, model or {})
@@ -43,15 +33,6 @@ class _NoGraphAgent(BaseAgent):
 
 
 class NoGraphOrchestrator:
-    """
-    Lightweight orchestrator for the no-graph baseline condition.
-
-    Supports: edit_file, run_script, broadcast.
-    run_tests is blocked by default (allow_run_tests=False) — agents must write
-    their own verification scripts.  The orchestrator still calls run_tests()
-    internally after each round to detect success.
-    Ignores all task-graph actions (claim_task, complete_task, assign_task, etc.).
-    """
 
     def __init__(self, run_dir: Path, repo_dir: Path, agents: dict, task_description: str, allow_run_tests: bool = False):
         self.run_dir = run_dir
@@ -65,16 +46,12 @@ class NoGraphOrchestrator:
         self._last_test_stdout: str = ""
         self._lead_agent_name: str | None = None
 
-    # ── logging ──────────────────────────────────────────────────────────────
-
     def log(self, event: dict):
         event["ts"] = time.time()
         if self._current_round is not None:
             event.setdefault("round", self._current_round)
         with self.events_path.open("a") as f:
             f.write(json.dumps(event) + "\n")
-
-    # ── file edit (with lock) ─────────────────────────────────────────────────
 
     _STDLIB_SHADOWS = frozenset({
         "ast", "collections", "copy", "csv", "datetime", "decimal", "difflib",
@@ -109,8 +86,6 @@ class NoGraphOrchestrator:
         self.log({"type": "edit_file", "agent": agent_name, "path": rel, "n_chars": len(content)})
         return True, "OK"
 
-    # ── test runner ───────────────────────────────────────────────────────────
-
     def run_tests(self) -> bool:
         t0 = time.time()
         proc = subprocess.run(["pytest", "-q"], cwd=self.repo_dir, capture_output=True, text=True)
@@ -138,16 +113,12 @@ class NoGraphOrchestrator:
         })
         output = proc.stdout[-3000:] + (f"\n[stderr]\n{proc.stderr[-1000:]}" if proc.stderr.strip() else "")
         return proc.returncode, output
-
-    # ── broadcast ─────────────────────────────────────────────────────────────
-
+    
     def broadcast_message(self, sender: str, message: str):
         for name, agent in self.agents.items():
             if name != sender:
                 agent.receive(message, sender=sender)
         self.log({"type": "broadcast", "sender": sender, "message": message[:500]})
-
-    # ── action processing ─────────────────────────────────────────────────────
 
     def _process_actions(self, agent_name: str, actions: list):
         agent = self.agents[agent_name]
@@ -186,15 +157,9 @@ class NoGraphOrchestrator:
             elif isinstance(a, BroadcastAction):
                 self.broadcast_message(agent_name, a.message)
 
-            # All task-graph actions (ClaimTask, CompleteTask, AssignTask, DiscoverTask, etc.)
-            # are intentionally ignored — this is the no-graph baseline.
-
-    # ── per-agent step ────────────────────────────────────────────────────────
-
     async def step_agent_async(self, agent_name: str, is_lead: bool = False):
         agent = self.agents[agent_name]
 
-        # Provide current test state as context each round
         if self._last_test_stdout:
             agent.receive(
                 f"=== CURRENT TEST STATUS (round {self._current_round}) ===\n"
@@ -213,8 +178,6 @@ class NoGraphOrchestrator:
         actions = parse_actions(reply)
         self._process_actions(agent_name, actions)
 
-    # ── main loop ─────────────────────────────────────────────────────────────
-
     def initialize_agents(self, lead_agent_name: str | None = None):
         self._lead_agent_name = lead_agent_name
         intro = f"=== PROJECT ===\n\n{self.task_description}"
@@ -230,16 +193,12 @@ class NoGraphOrchestrator:
         try:
             self.log({"type": "run_start"})
             all_names = list(self.agents.keys())
-            # Decentralized: no lead, all agents run in parallel each round.
-            # With lead: lead runs first (sequential), then the rest run in parallel.
             peer_names = [n for n in all_names if n != lead_agent_name]
 
             for r in range(1, max_rounds + 1):
                 self._current_round = r
                 self.log({"type": "round_start", "round": r})
 
-                # Lead goes first (sequential) so broadcasts reach teammates this round.
-                # Skipped when lead_agent_name is None (decentralized mode).
                 if lead_agent_name and lead_agent_name in self.agents:
                     await self.step_agent_async(lead_agent_name, is_lead=True)
 
@@ -256,7 +215,6 @@ class NoGraphOrchestrator:
                     for name in peer_names
                 ])
 
-                # Check success after each round by running tests
                 if self.run_tests():
                     self.log({"type": "run_end", "reason": "tests_passed", "round": r})
                     return True
@@ -278,16 +236,13 @@ class NoGraphOrchestrator:
                     if asyncio.iscoroutine(result):
                         await result
 
-
-# ── helpers ───────────────────────────────────────────────────────────────────
-
 def _parse_pytest_counts(stdout: str) -> tuple[int, int]:
     """
     Parse pytest -q output for pass/fail counts.
     Returns (n_passed, n_total).  Falls back to (0, 0) if unparseable.
     """
     import re as _re
-    # Lines like: "3 passed, 5 failed" or "8 passed" or "5 failed"
+
     passed = 0
     failed = 0
     m = _re.search(r'(\d+)\s+passed', stdout)
@@ -298,8 +253,6 @@ def _parse_pytest_counts(stdout: str) -> tuple[int, int]:
         failed = int(m.group(1))
     return passed, passed + failed
 
-
-# ── public entry point ────────────────────────────────────────────────────────
 
 async def run_no_graph_pipeline(
     task_file,
@@ -318,13 +271,11 @@ async def run_no_graph_pipeline(
     repo_dir = run_dir / "repo"
     repo_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy test suite into the repo (same as regular pipeline)
     for fname in ("test_suite.py",):
         src = task_dir / fname
         if src.exists():
             shutil.copy(src, repo_dir / fname)
 
-    # Run setup script if present
     setup_script = task_dir / "setup_data.py"
     if setup_script.exists():
         import importlib.util, sys as _sys
@@ -375,7 +326,6 @@ async def run_no_graph_pipeline(
     success = await orchestrator.run_async(max_rounds=max_rounds, lead_agent_name="Lead")
     wall_clock = time.time() - t0
 
-    # Token accounting
     total_input, total_output = 0, 0
     for agent in agents.values():
         client = getattr(agent, "llm_client", None)
@@ -383,7 +333,6 @@ async def run_no_graph_pipeline(
             total_input  += client.total_input_tokens
             total_output += client.total_output_tokens
 
-    # Measure task completion as test pass rate
     n_passed, n_total = _parse_pytest_counts(orchestrator._last_test_stdout)
 
     return {

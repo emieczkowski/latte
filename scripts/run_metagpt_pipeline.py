@@ -1,13 +1,3 @@
-"""
-run_metagpt_pipeline.py — run a MetaGPT team on a task from inside
-the experiment dispatch infrastructure.
-
-Drop-in alongside run_dynamic_pipeline / run_no_graph_pipeline:
-  result = run_metagpt_trial(task_file, run_dir, model_config)
-
-Returns the same dict shape as run_pipeline() so dispatch scripts
-can treat MetaGPT as just another condition.
-"""
 from __future__ import annotations
 
 import importlib.util
@@ -22,8 +12,6 @@ REPO_ROOT   = Path(__file__).parent.parent
 VENV_PYTHON = REPO_ROOT / "vendor" / "venv-metagpt-paper" / "bin" / "python"
 _CONFIG_SRC = REPO_ROOT / "metagpt_utils" / "metagpt_config.yaml"
 
-# Maps task-dir name → (output_file, use_preloaded_qa)
-# output_file may be comma-separated for tasks that produce multiple files.
 _TASK_CONFIG: dict[str, tuple[str, bool]] = {
     "debug_sprint":  ("signal_toolkit.py",                      True),
     "bugfix_sprint": ("signal_toolkit.py",                      True),
@@ -37,7 +25,7 @@ _TASK_CONFIG: dict[str, tuple[str, bool]] = {
 }
 
 _N_TEAMMATES = 5   # PM, Architect, PM, Engineer, QaEngineer
-_N_ROUND     = 30
+_N_ROUND     = 40
 
 
 def _load_env() -> dict[str, str]:
@@ -76,17 +64,14 @@ def _setup_run_dir(run_dir: Path, task_file: Path, model_config: dict) -> None:
     (config_dir / "key.yaml").write_text(key_yaml)
     (run_dir / "key.yaml").write_text(key_yaml)
 
-    # test_suite.py goes in the MetaGPT project root (run_dir)
     ts = task_dir / "test_suite.py"
     if ts.exists():
         shutil.copy(ts, run_dir / "test_suite.py")
 
-    # conftest.py — needed so pytest fixtures (e.g. setup_dataset) run correctly
     cf = task_dir / "conftest.py"
     if cf.exists():
         shutil.copy(cf, run_dir / "conftest.py")
 
-    # Run setup_data.py to plant buggy/stub source files
     setup_script = task_dir / "setup_data.py"
     if setup_script.exists():
         _inserted = str(task_dir) not in sys.path
@@ -97,7 +82,7 @@ def _setup_run_dir(run_dir: Path, task_file: Path, model_config: dict) -> None:
             mod  = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
             if hasattr(mod, "setup"):
-                mod.setup(run_dir)   # MetaGPT works in run_dir, not a repo/ subdir
+                mod.setup(run_dir)  
         finally:
             if _inserted:
                 sys.path.remove(str(task_dir))
@@ -114,12 +99,9 @@ def _write_launch_py(run_dir: Path, task_file: Path, model_config: dict) -> Path
         task_name, ("output.py", False)
     )
 
-    # For tasks with a data file, embed the absolute path so agents can find
-    # employee_data.csv from inside the MetaGPT workspace subdirectory.
     if task_name == "simple_eda":
         idea = idea.replace("employee_data.csv", str(run_dir / "employee_data.csv"))
 
-    # Import LAUNCH_TEMPLATE without executing setup_metagpt_runs module-level code
     with open(REPO_ROOT / "scripts" / "setup_metagpt_runs.py") as f:
         src = f.read()
     start = src.index("LAUNCH_TEMPLATE = '''")
@@ -136,7 +118,6 @@ def _write_launch_py(run_dir: Path, task_file: Path, model_config: dict) -> Path
         idea             = idea,
         use_preloaded_qa = use_preloaded_qa,
         output_file      = output_file,
-        # exp_dir/trial are unused when METAGPT_SKIP_CSV=1
         exp_dir          = "experiments/experiment2/n5",
         n_teammates      = _N_TEAMMATES,
         n_round          = _N_ROUND,
@@ -153,11 +134,6 @@ def run_metagpt_trial(
     model_config: dict,
     max_rounds: int | None = None,
 ) -> dict | None:
-    """
-    Run a MetaGPT team on task_file inside run_dir.
-
-    Returns a dict matching run_pipeline()'s shape, or None on crash.
-    """
     task_file = Path(task_file).resolve()
     run_dir   = Path(run_dir).resolve()
 
@@ -174,7 +150,7 @@ def run_metagpt_trial(
     launch_path = _write_launch_py(run_dir, task_file, model_config)
 
     env = os.environ.copy()
-    env["METAGPT_SKIP_CSV"] = "1"   # dispatch script owns CSV writing
+    env["METAGPT_SKIP_CSV"] = "1" 
 
     proc = subprocess.run(
         [str(VENV_PYTHON), str(launch_path)],
@@ -188,7 +164,7 @@ def run_metagpt_trial(
         return None
 
     data = json.loads(result_path.read_text())
-    # Normalise to the shape run_pipeline() returns
+
     return {
         "success":              data["success"],
         "tasks_done":           data["tasks_done"],
