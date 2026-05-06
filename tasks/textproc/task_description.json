@@ -1,0 +1,7 @@
+{
+  "project": "Extend textproc — add features to an existing text processing library",
+  "description": "Your team must extend an existing Python text processing library. Three files already have working implementations — extend them and build new modules on top.\n\nREPO STRUCTURE AT START:\n  document.py    — Document class with .text, .words, .word_count  (EXTEND)\n  tokenizer.py   — Tokenizer class with .tokenize_words(text)       (EXTEND)\n  utils.py       — clean_text(), normalize_whitespace()             (use as-is)\n\nFILES TO CREATE:\n  sentiment.py   — SentimentAnalyzer\n  keywords.py    — KeywordExtractor\n  summarizer.py  — Summarizer\n  similarity.py  — cosine_similarity, jaccard_similarity\n  formatter.py   — Formatter\n  pipeline.py    — Pipeline, add_sentiment, add_keywords, add_summary\n\nRun <run_tests /> to see what's currently passing. Read test_suite.py for the expected interfaces.",
+  "repository": "repo",
+  "success_criteria": "All interfaces in test_suite.py are implemented correctly. Run <run_tests /> to verify that everything is implemented; it does not check correctness.",
+  "tasks": []
+}

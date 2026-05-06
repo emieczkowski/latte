@@ -1,0 +1,107 @@
+{
+  "_note": "Researcher's ground-truth rubric — never shown to agents. Score completed runs against findings.json and summary.txt.",
+
+  "dataset": {
+    "n_rows": 400,
+    "n_cols": 10,
+    "seed": 7,
+    "planted_properties": 2,
+    "decoys": 0,
+    "key_conditioning_variable": "feat_02 (shuffled name)",
+    "notes": [
+      "feat_01 (shuffled) is the bimodal signal variable",
+      "feat_02 (shuffled) is the key categorical conditioning variable (unlocks P2)",
+      "P2 requires conditioning on feat_02 — discovering it is critical",
+      "Column names in CSV are feat_01..feat_10 but presented in shuffled order"
+    ]
+  },
+
+  "scoring": {
+    "total_points": 50,
+    "passing_threshold": 25,
+    "notes": "Easier task — expect higher scores. 35+ is a strong result."
+  },
+
+  "properties": [
+    {
+      "id": "P1",
+      "name": "Bimodal distribution (two-component mixture)",
+      "description": "The key signal variable is drawn from a mixture of two Gaussians: group_low (40%) ~ N(10,2), group_high (60%) ~ N(30,2). The two groups are clearly separated by ~10 std deviations.",
+      "ground_truth": {
+        "n_components": 2,
+        "means": [10.0, 30.0],
+        "stds": [2.0, 2.0],
+        "weights": [0.40, 0.60]
+      },
+      "task_dependencies": "none — stand-alone discovery, but unlocks P2 interpretation",
+      "scoring": {
+        "discovery": {
+          "points": 10,
+          "description": "findings['distributions'] contains an entry for the bimodal variable using bimodal/two-component language.",
+          "automated": true,
+          "test_class": "TestBimodalDistribution"
+        },
+        "characterization": {
+          "points": 8,
+          "description": "Agent correctly identifies TWO components. Full credit: two means recorded within 5 units of [10, 30] and weights approximately reported. Partial (4 pts): two components noted but means not reported.",
+          "automated": false
+        }
+      }
+    },
+    {
+      "id": "P2",
+      "name": "Conditional linear relationship (only in feat_02=='A')",
+      "description": "The relationship between the bimodal variable (x) and the conditional target (y) follows y = 2*x + noise ONLY within feat_02=='A'. In region B, y is independent noise. Overall correlation is weak.",
+      "ground_truth": {
+        "functional_form": "y = 2.0 * x + N(0, 2)",
+        "condition": "feat_02 == 'A'",
+        "within_A_linear_r2": ">0.80",
+        "overall_r_approx": "<0.60"
+      },
+      "task_dependencies": "requires recognising feat_02 as a conditioning variable",
+      "scoring": {
+        "discovery": {
+          "points": 12,
+          "description": "findings['relationships'] or ['subgroup_effects'] references both variables AND mentions conditioning on feat_02 or region 'A'.",
+          "automated": true,
+          "test_class": "TestConditionalRelationship"
+        },
+        "characterization": {
+          "points": 8,
+          "description": "Full credit: linear functional form identified AND conditioning on 'A' explicitly stated AND supported by R² or scatter. Partial (4 pts): relationship noted but conditioning not identified.",
+          "automated": false
+        }
+      }
+    }
+  ],
+
+  "cross_cutting": [
+    {
+      "id": "CC1",
+      "name": "Figures quality",
+      "points": 6,
+      "automated": false,
+      "evaluation_guide": "Inspect figures/ manually. 2 pts per figure (max 3) that: has axis labels + title, directly illustrates a planted property, and is not a duplicate."
+    },
+    {
+      "id": "CC2",
+      "name": "Narrative coherence",
+      "points": 6,
+      "automated": false,
+      "evaluation_guide": "Read summary.txt. Full credit (6): findings are summarised clearly, subgroup conditioning is noted, writing is clear. Half credit (3): findings listed without subgroup narrative."
+    }
+  ],
+
+  "graph_metrics": {
+    "_note": "Computed from events.jsonl after the run using orchestrator/metrics.py.",
+    "fields_to_record": [
+      "n_tasks_in_initial_graph",
+      "n_tasks_discovered_mid_run",
+      "n_rounds_to_completion",
+      "critical_path_length",
+      "frontier_width_at_peak",
+      "n_discover_actions_by_teammates",
+      "tasks_requiring_prior_task_output"
+    ]
+  }
+}

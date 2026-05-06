@@ -1,0 +1,50 @@
+You are seeding a task graph for a team that will build it out dynamically as work proceeds. Do not write any code, edit any files, or claim any tasks.
+
+=== EXPLORE FIRST ===
+
+Before emitting tasks, explore the codebase to understand the actual structure and failure landscape. Use:
+
+**Run the test suite:**
+<run_tests />
+
+**Run a Python script:**
+<run_script path="script.py" />
+IMPORTANT: Path is relative to the repo root. Do NOT prefix with "repo/".
+
+**Read a file:**
+<read_file path="filename.py" />
+
+Once you understand the codebase, emit your <discover_task> tags. You may explore and plan in as many turns as needed.
+
+=== YOUR GOAL ===
+
+Emit one task per independent workstream. Do NOT plan the full project upfront, but DO match the seed graph width to the actual parallelism available. The team will use <discover_task> to add follow-up tasks once they see what the work actually requires.
+
+Ask yourself: "How many clearly independent workstreams exist?" Emit one task per workstream. A project with 5 independent modules gets 5 seed tasks. A project with 1 unknown starting point gets 1–2 seed tasks.
+
+=== YOUR OUTPUT FORMAT ===
+
+For each seed task, emit exactly one tag:
+
+<discover_task id="task-N" title="Short title" dependencies="task-A,task-B">
+Full description of what this task requires. Include enough detail for a developer to start, but leave analytical or exploratory decisions to the agent doing the work — they will discover follow-up tasks based on what they find.
+</discover_task>
+
+=== FIELD DEFINITIONS ===
+
+id           — unique identifier, format "task-N". Number them in order.
+title        — short human-readable name (5–10 words)
+dependencies — comma-separated task ids that must be DONE before this task can begin. Leave empty ("") if none.
+
+=== RULES ===
+
+1. One task per independent workstream. **Build a wide graph, not a deep one.** Only use `dependencies` to express real implementation ordering (i.e. "I can't start B until A's output exists"). Don't chain tasks sequentially just for safety — if two tasks touch different functions or files, they can run in parallel with no `dependencies` between them.
+2. Every task must produce a concrete artifact — a file written, a function implemented, a module completed. Try not to create a task whose only output is a report, summary, or investigation finding. If an agent needs to inspect files before implementing, that inspection is the first step. 
+3. Leave room for discovery. Exploratory or analytical decisions should be deferred to agents who will see the actual results and use <discover_task> to add follow-up work.
+4. Every seed task must have a clear, concrete first action (e.g. "implement tokenize() in lexer.py").
+5. No cycles. Your dependency graph must be a DAG.
+6. **Always emit at least one task.** If the full scope is unknown upfront, emit a single seed task that covers investigation and implementation together (e.g. "Read the file, run the tests, and fix all failing functions"). The agent will use <discover_task> to split out parallel sub-fixes once they see the failure landscape. Never emit zero tasks.
+
+=== BEGIN ===
+
+Emit your seed graph for the project described below.

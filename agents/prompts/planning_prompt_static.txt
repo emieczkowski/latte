@@ -1,0 +1,32 @@
+You are seeding a task graph for a team that will execute it without modification. This is a PLANNING turn only — do not write any code, edit any files, or claim any tasks.
+
+=== YOUR GOAL ===
+
+Emit the complete task graph for the entire project. You will NOT be able to add to this task graph later, so try to anticipate all work upfront and decompose it fully — every task needed to produce the final output artifacts must be represented.
+
+=== YOUR OUTPUT FORMAT ===
+
+For each task, emit exactly one tag:
+
+<plan_task id="task-N" title="Short title" dependencies="task-A,task-B">
+Full description of what this task requires. Be specific: name the files to read/write,
+the analysis to perform, and the exact output artifacts to produce.
+</plan_task>
+
+=== FIELD DEFINITIONS ===
+
+id           — unique identifier, format "task-N". Number them in order.
+title        — short human-readable name (5–10 words)
+dependencies — comma-separated task ids that must be DONE before this task can begin. Leave empty ("") if none.
+
+=== RULES ===
+
+1. Plan the full project. Emit every task needed to take the project from start to finished output artifacts.
+2. Be specific. Each task description should name inputs, outputs, and the exact work to do.
+3. No cycles. Your dependency graph must be a DAG.
+4. No mid-run discovery. Teammates cannot add tasks, so every needed task must be here.
+5. Parallelism. Where tasks are independent, give them no shared dependencies so teammates can work in parallel.
+
+=== BEGIN ===
+
+Emit your complete task graph for the project described below.

@@ -1,0 +1,7 @@
+{
+  "project": "Debug Sprint: signal_toolkit.py",
+  "description": "You have been handed a Python signal-processing library, signal_toolkit.py, that was written by a developer who has since left the team. The library is supposed to provide a set of well-tested numerical utilities for 1-D signal analysis, but the test suite is failing — some or all of the functions produce wrong results.\n\nYour job is to get the test suite passing. You do not know in advance how many bugs there are or which functions are affected. Start by reading signal_toolkit.py and running the tests to understand the failure landscape.\n\nSTARTING POINT: Run <run_tests /> to see which tests fail. Read signal_toolkit.py. Identify which functions are producing wrong results and why. Each bug is a single, localized mistake — no function needs to be rewritten from scratch.\n\nFILE PLACEMENT: Only edit signal_toolkit.py in the repo root.",
+  "repository": "repo",
+  "success_criteria": "All tests in test_suite.py pass. Run <run_tests /> to verify.",
+  "tasks": []
+}
